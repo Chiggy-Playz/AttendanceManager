@@ -1,3 +1,4 @@
+import 'package:attendance_manager/attendance/data/attendance_model.dart';
 import 'package:attendance_manager/classes/data/models/class_model.dart';
 import 'package:attendance_manager/student/data/models/student.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -63,4 +64,23 @@ class ClassPageProvider extends ChangeNotifier {
     );
     notifyListeners();
   }
+
+  Future<List<Attendance>> getAttendance() async {
+    var attendance = <Attendance>[];
+
+    var attendanceSnapshot = await FirebaseFirestore.instance
+        .collection("attendance")
+        .where("classId", isEqualTo: class_.id)
+        .get();
+
+    for (var doc in attendanceSnapshot.docs) {
+      var data = doc.data();
+      data["id"] = doc.id;
+
+      attendance.add(Attendance.fromJson(data));
+    }
+
+    return attendance;
+  }
+
 }

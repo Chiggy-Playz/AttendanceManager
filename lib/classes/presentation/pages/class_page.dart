@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:attendance_manager/attendance/presentation/attendance_list.dart';
+import 'package:attendance_manager/attendance/presentation/attendance_upload_page.dart';
 import 'package:attendance_manager/classes/data/provider/class_page_provider.dart';
 import 'package:attendance_manager/home/presentation/widgets/edit_class_dialog.dart';
 import 'package:attendance_manager/student/data/models/student.dart';
@@ -41,46 +43,89 @@ class _ClassPageState extends State<ClassPage> {
                     );
                   },
                 ),
-                IconButton(
-                  onPressed: takeAttendance,
-                  icon: const Icon(Icons.calendar_month),
-                )
               ],
             ),
-            body: FutureBuilder(
-              future: getStudents(provider),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                var students = snapshot.data as List<Student>;
-
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ListView.builder(
-                    itemCount: students.length,
-                    itemBuilder: (context, index) {
-                      var student = students[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(student.name),
-                          subtitle: Text(student.rollNo),
-                          onTap: () => routeToStudentPage(student),
+            body: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+                    child: FilledButton(
+                      onPressed: viewAttendance,
+                      child: Text("View Attendance"),
+                      style: ButtonStyle(
+                        minimumSize: MaterialStateProperty.all(
+                          const Size(double.infinity, 50),
                         ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+                    child: FilledButton(
+                      onPressed: takeAttendance,
+                      child: Text("Take Attendance"),
+                      style: ButtonStyle(
+                        minimumSize: MaterialStateProperty.all(
+                          const Size(double.infinity, 50),
+                        ),
+                      ),
+                    ),
+                  ),
+                  FutureBuilder(
+                    future: getStudents(provider),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      var students = snapshot.data as List<Student>;
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: students.length,
+                        itemBuilder: (context, index) {
+                          var student = students[index];
+                          return Card(
+                            child: ListTile(
+                              title: Text(student.name),
+                              subtitle: Text(student.rollNo),
+                              onTap: () => routeToUploadAttendancePage(student),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
-                );
-              },
+                ],
+              ),
             ),
             floatingActionButton: FloatingActionButton(
-              onPressed: () => routeToStudentPage(null),
+              onPressed: () => routeToUploadAttendancePage(null),
               child: const Icon(Icons.add),
             ));
       },
+    );
+  }
+
+  Future<void> viewAttendance() async {
+    // View attendance
+    // Get the attendance from the database
+    var attendance = await context.read<ClassPageProvider>().getAttendance();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) {
+          return ChangeNotifierProvider.value(
+            value: context.read<ClassPageProvider>(),
+            child: ViewAttendanceList(attendanceList: attendance),
+          );
+        },
+      ),
     );
   }
 
@@ -89,7 +134,7 @@ class _ClassPageState extends State<ClassPage> {
     return provider.getStudents();
   }
 
-  Future<void> routeToStudentPage(Student? student) async {
+  Future<void> routeToUploadAttendancePage(Student? student) async {
     // Navigate to the add student page
 
     Navigator.of(context).push(
@@ -149,47 +194,23 @@ class _ClassPageState extends State<ClassPage> {
 
     List<String> encodings = students.map((e) => e.faceEncoding).toList();
 
-    final dio = Dio(BaseOptions(
-      validateStatus: (status) => true,
-    ));
-
-    FormData formData = FormData.fromMap({
+    Map<String, dynamic> formData = {
       "class_photo_image": await MultipartFile.fromFile(imageFile.path),
       "known_encodings": encodings,
       "bounding_boxes_raw":
           boundingBoxes.map((e) => jsonEncode(e)).toList().toString(),
-    });
+    };
 
-    final response = await dio.post(
-      'https://abs.chiggydoes.tech/get_class_encodings',
-      data: formData,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) {
+          return ChangeNotifierProvider<ClassPageProvider>.value(
+            value: context.read<ClassPageProvider>(),
+            child: AttendanceUploadPage(formData: formData),
+          );
+        },
+      ),
     );
-
-    print(response);
-
-    if (response.statusCode != 200) {
-      throw UnknownError();
-    }
-
-    var data = List<String>.from(response.data);
-
-    var presentStudents = <Student>[];
-
-    for (var i = 0; i < data.length; i++) {
-      var faceEncoding = data[i];
-      // Find student with this face encoding
-      Student? s = null;
-      for (var student in students) {
-        if (student.faceEncoding == faceEncoding) {
-          s = student;
-          break;
-        }
-      }
-
-      if (s != null) {
-        presentStudents.add(s);
-      }
-    }
 
     print("Here");
   }

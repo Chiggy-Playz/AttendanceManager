@@ -232,6 +232,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
                   backgroundColor: Theme.of(context).colorScheme.error,
                 ),
               );
+              Navigator.of(context).pop();
               return;
             }
 
