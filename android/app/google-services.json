@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "889780000169",
+    "project_id": "attendancemanager-459cb",
+    "storage_bucket": "attendancemanager-459cb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889780000169:android:6d96560bf5a3a502d0a0b8",
+        "android_client_info": {
+          "package_name": "com.practicum.attendance_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4oyRJc1idUiSjvMxbAfQXbZibBE5fRX0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
